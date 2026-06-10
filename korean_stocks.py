@@ -15,14 +15,13 @@ st.set_page_config(
 STOCKS = {
     "삼성전자": "005930.KS",
     "SK하이닉스": "000660.KS",
-    "LG에너지솔루션": "373220.KS",
-    "삼성바이오로직스": "207940.KS",
     "현대차": "005380.KS",
     "POSCO홀딩스": "005490.KS",
     "카카오": "035720.KS",
     "NAVER": "035420.KS",
     "기아": "000270.KS",
     "셀트리온": "068270.KS",
+    "S&P500": "^GSPC",
 }
 
 PERIOD_OPTIONS = {
@@ -100,27 +99,40 @@ st.divider()
 # ── 주가 차트 ────────────────────────────────────────────────
 st.subheader(f"주가 차트 ({period_label})")
 
+line_mode = st.radio("라인 차트 기준", ["등락률 (%)", "종가 (원)"], horizontal=True)
+
 if chart_type == "라인":
     fig = go.Figure()
     for name, ticker in selected_tickers.items():
         hist = fetch_stock_data(ticker, period)
         if not hist.empty:
+            if line_mode == "등락률 (%)":
+                base = hist["Close"].iloc[0]
+                y_val = (hist["Close"] / base - 1) * 100
+                hover = "%{x}<br>%{y:+.2f}%<extra></extra>"
+                y_title = "등락률 (%)"
+            else:
+                y_val = hist["Close"]
+                hover = "%{x}<br>%{y:,.0f}원<extra></extra>"
+                y_title = "종가 (원)"
             fig.add_trace(
                 go.Scatter(
                     x=hist.index,
-                    y=hist["Close"],
+                    y=y_val,
                     mode="lines",
                     name=name,
-                    hovertemplate="%{x}<br>%{y:,.0f}원<extra></extra>",
+                    hovertemplate=hover,
                 )
             )
     fig.update_layout(
         xaxis_title="날짜",
-        yaxis_title="종가 (원)",
+        yaxis_title=y_title,
         hovermode="x unified",
         height=480,
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
+    if line_mode == "등락률 (%)":
+        fig.add_hline(y=0, line_dash="dash", line_color="gray", opacity=0.5)
     st.plotly_chart(fig, use_container_width=True)
 
 else:  # 캔들스틱 — 종목 하나씩
