@@ -58,8 +58,7 @@ selected_tickers = {name: STOCKS[name] for name in selected_names}
 def fetch_stock_data(ticker: str, period: str):
     stock = yf.Ticker(ticker)
     hist = stock.history(period=period)
-    info = stock.fast_info
-    return hist, info
+    return hist
 
 
 # ── 요약 카드 ────────────────────────────────────────────────
@@ -68,7 +67,7 @@ cols = st.columns(len(selected_names))
 
 summary_rows = []
 for col, (name, ticker) in zip(cols, selected_tickers.items()):
-    hist, info = fetch_stock_data(ticker, period)
+    hist = fetch_stock_data(ticker, period)
     if hist.empty:
         col.warning(f"{name}\n데이터 없음")
         continue
@@ -104,7 +103,7 @@ st.subheader(f"주가 차트 ({period_label})")
 if chart_type == "라인":
     fig = go.Figure()
     for name, ticker in selected_tickers.items():
-        hist, _ = fetch_stock_data(ticker, period)
+        hist = fetch_stock_data(ticker, period)
         if not hist.empty:
             fig.add_trace(
                 go.Scatter(
@@ -127,7 +126,7 @@ if chart_type == "라인":
 else:  # 캔들스틱 — 종목 하나씩
     candle_name = st.selectbox("캔들스틱 종목", list(selected_tickers.keys()))
     candle_ticker = selected_tickers[candle_name]
-    hist, _ = fetch_stock_data(candle_ticker, period)
+    hist = fetch_stock_data(candle_ticker, period)
     if not hist.empty:
         fig = go.Figure(
             go.Candlestick(
@@ -156,7 +155,7 @@ st.divider()
 st.subheader("거래량 비교 (최근 30일 평균)")
 vol_data = []
 for name, ticker in selected_tickers.items():
-    hist, _ = fetch_stock_data(ticker, period)
+    hist = fetch_stock_data(ticker, period)
     if not hist.empty:
         avg_vol = hist["Volume"].tail(30).mean()
         vol_data.append({"종목": name, "평균거래량": avg_vol})
@@ -181,7 +180,7 @@ st.divider()
 st.subheader(f"기간 수익률 비교 ({period_label})")
 ret_data = []
 for name, ticker in selected_tickers.items():
-    hist, _ = fetch_stock_data(ticker, period)
+    hist = fetch_stock_data(ticker, period)
     if not hist.empty and len(hist) > 1:
         ret = (hist["Close"].iloc[-1] / hist["Close"].iloc[0] - 1) * 100
         ret_data.append({"종목": name, "수익률(%)": round(ret, 2)})
